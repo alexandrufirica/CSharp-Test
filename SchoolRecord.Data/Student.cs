@@ -11,7 +11,7 @@ namespace SchoolRecord.Data
 
         public int Id { get; set; }
         public int GrupaId { get; set; }
-        public int OrasID { get; set; }
+        public int OrasId { get; set; }
         public string Nume { get; set; }
         public string Prenume { get; set; }
     }

@@ -20,27 +20,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/oras", async (SchoolRecordDbContext db) =>
-{
-   return await db.Orase.ToListAsync();
-
-});
-
-app.MapPost("/oras", async (SchoolRecordDbContext db, Orase oras) =>
-{
-    db.Orase.Add(oras);
-    await db.SaveChangesAsync();
-
-    return Results.Created($"/oras{oras.Id}", oras);
-
-});
-
-app.MapGet("/oras{id}", async (SchoolRecordDbContext db, int id) =>
-{
-    return db.Orase.Find(id);
-});
-
-app.MapGet("/student{id}", async (SchoolRecordDbContext db, int id) =>
+app.MapGet("/student/{id}", async (SchoolRecordDbContext db, int id) =>
 {
     var result = from note in db.Note
                  join student in db.Student on note.StudentId equals student.Id
@@ -56,6 +36,42 @@ app.MapGet("/student{id}", async (SchoolRecordDbContext db, int id) =>
                  
                  };
     
+    return result;
+});
+
+app.MapGet("/medie/{id}", async(SchoolRecordDbContext db, int id)  =>
+{
+    var students = await db.Student
+       .Where(s => s.Id == id)
+       .ToListAsync();
+
+    var ultimaNota = await (from note in db.Note
+                            where note.StudentId == id
+                            group note by new { note.StudentId, note.MaterieId } into grouped
+                            select grouped.OrderByDescending(n => n.Id).FirstOrDefault())
+                            .ToListAsync();
+
+    // Switch to client-side evaluation for the join
+    var result = students
+        .Join(ultimaNota, student => student.Id, un => un.StudentId,
+              (student, un) => new
+              {
+                  StudentId = student.Id,
+                  Nume = student.Nume,
+                  Prenume = student.Prenume,
+                  Materie = un.MaterieId,
+                  Nota = un.Nota
+              })
+        .GroupBy(n => new { n.StudentId, n.Nume, n.Prenume })
+        .Select(group => new
+        {
+            StudentId = group.Key.StudentId,
+            Nume = group.Key.Nume,
+            Prenume = group.Key.Prenume,
+            OverallAverage = group.Average(g => (double)g.Nota)
+        })
+        .FirstOrDefault();
+
     return result;
 });
 
