@@ -9,6 +9,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<SchoolRecordDbContext>(options =>
    options.UseSqlServer("Server=localhost;Database=Universitate;Trusted_Connection=True;TrustServerCertificate=true"));
 
+builder.Services.AddMvc(options =>
+{
+    options.Filters.Add(new BasicAuthenticationAttribute());
+});
+
 var app = builder.Build();
 
 
@@ -28,7 +33,7 @@ app.MapGet("/student/{id}", async (SchoolRecordDbContext db, int id) =>
                  where student.Id == id
                  select new
                  {
-                     StudentId = student.Id,
+                   
                      Nume = student.Nume,
                      Prenume = student.Prenume,
                      Materie = materie.Nume,
@@ -65,7 +70,7 @@ app.MapGet("/medie/{id}", async(SchoolRecordDbContext db, int id)  =>
         .GroupBy(n => new { n.StudentId, n.Nume, n.Prenume })
         .Select(group => new
         {
-            StudentId = group.Key.StudentId,
+            
             Nume = group.Key.Nume,
             Prenume = group.Key.Prenume,
             OverallAverage = group.Average(g => (double)g.Nota)
